@@ -6,14 +6,13 @@ The full pipeline (``AmbiguityAwareAgent``) bundles three stages:
 
 For ablation / module-level evaluation we expose two thin agents that
 reuse the exact same primitives from
-:mod:`src.agent.ambiguity_identifier`, :mod:`src.agent.clarification`,
-:mod:`src.agent.code_executor`, and :mod:`src.agent.prompts`, but each
+:mod:`src.runner.ambiguity_identifier`, :mod:`src.runner.clarification`,
+:mod:`src.runner.code_executor`, and :mod:`src.runner.prompts`, but each
 covers only one slice of the pipeline.
 
 * :class:`AmbiguityOnlyAgent`
     Runs only the uncertainty detector and stops. No oracle / no
-    clarification / no codegen. Supports both
-    ``direct_prompt`` and ``divergence`` strategies.
+    clarification / no codegen. Uses the ``direct_prompt`` strategy.
 
 * :class:`ClarificationOnlyAgent`
     Skips uncertainty detection — the question is treated as already
@@ -25,7 +24,7 @@ covers only one slice of the pipeline.
     clarification recovers intent from a known-ambiguous task.
 
 Both agents emit traces that share field names with
-:class:`src.agent.agent.AgentTrace` so the existing summarization /
+:class:`src.runner.runner.AgentTrace` so the existing summarization /
 metrics tooling continues to apply.
 """
 from __future__ import annotations

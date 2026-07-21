@@ -1,0 +1,23 @@
+# Python >= 3.10 recommended.
+
+# Config / experiment orchestration
+hydra-core>=1.3.2
+omegaconf>=2.3.0
+
+# Core scientific stack
+numpy>=2.2.5
+pandas>=2.3.3
+scipy>=1.15.3
+xarray>=2025.6.1
+dask>=2026.3.0
+gsw>=3.6.20
+
+# NetCDF backends for xarray
+netCDF4>=1.7.4
+h5netcdf>=1.8.0
+cftime>=1.6.5
+
+# LLM provider SDKs
+openai>=2.36.0
+anthropic>=0.100.0     # only if llm.provider / oracle.provider = anthropic
+google-genai>=2.0.1    # only if llm.provider / oracle.provider = gemini

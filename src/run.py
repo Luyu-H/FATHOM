@@ -18,17 +18,17 @@ two evaluation axes:
     and (on failure) the specific error.
 
 Usage examples:
-    # default run (config defaults from configs/agent.yaml)
-    python -m src.main
+    # default run (config defaults from configs/runner.yaml)
+    python -m src.run
 
     # switch strategies via Hydra CLI overrides
-    python -m src.main uncertainty.strategy=divergence clarification.strategy=planning
+    python -m src.run clarification.strategy=planning
 
     # switch model
-    python -m src.main llm.provider=openai llm.model=gpt-4o llm.api_key_env=OPENAI_API_KEY
+    python -m src.run llm.provider=openai llm.model=gpt-4o llm.api_key_env=OPENAI_API_KEY
 
     # quick smoke test (only run first 5 questions)
-    python -m src.main eval.limit=5
+    python -m src.run eval.limit=5
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ from typing import Any, Dict, List, Optional
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from src.agent.agent import AgentTrace, AmbiguityAwareAgent
+from src.runner.runner import AgentTrace, AmbiguityAwareAgent
 from src.eval.oracle import Oracle
 
 logger = logging.getLogger(__name__)
@@ -281,7 +281,7 @@ def run_eval(cfg: DictConfig) -> None:
 # Hydra entry point
 # =============================================================
 
-@hydra.main(version_base=None, config_path="../configs", config_name="agent")
+@hydra.main(version_base=None, config_path="../configs", config_name="runner")
 def main(cfg: DictConfig) -> None:
     logging.basicConfig(
         level=getattr(logging, str(cfg.eval.log_level).upper(), logging.INFO),

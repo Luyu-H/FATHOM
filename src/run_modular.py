@@ -14,7 +14,7 @@ downstream metrics tooling applies::
     <output_dir>/<run_name>/summary/<qa_file>.json       # flat summary
 
 Usage:
-    python -m src.run_modular                            # uses configs/agent_modular.yaml
+    python -m src.run_modular                            # uses configs/runner_modular.yaml
     python -m src.run_modular --config path/to.yaml
     python -m src.run_modular mode=clarification_only \
         clarification.strategy=candidate eval.limit=5
@@ -34,7 +34,7 @@ from typing import Any, Dict, List, Optional
 
 from omegaconf import DictConfig, OmegaConf
 
-from src.agent.modular_agent import (
+from src.runner.runner_modular import (
     AmbiguityOnlyAgent, AmbiguityOnlyTrace,
     ClarificationOnlyAgent, ClarificationOnlyTrace,
 )
@@ -42,7 +42,7 @@ from src.eval.oracle import Oracle
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "configs" / "agent_modular.yaml"
+DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "configs" / "runner_modular.yaml"
 
 
 # =============================================================

@@ -78,7 +78,7 @@ from typing import Any, Dict, List, Optional
 
 from omegaconf import DictConfig
 
-from src.agent.llm_client import (
+from src.runner.llm_client import (
     LLMClient,
     Message,
     build_llm_client,
@@ -336,7 +336,7 @@ class Oracle:
         Path to the JSONL knowledge base.
     config : DictConfig
         Must contain an ``oracle`` subtree compatible with
-        :func:`src.agent.llm_client.build_llm_client` — i.e. fields
+        :func:`src.runner.llm_client.build_llm_client` — i.e. fields
         ``provider``, ``model``, ``api_key_env``, ``max_tokens``,
         ``temperature``, ``max_retries``, ``request_interval``. The
         same ``max_retries`` is reused for JSON-shape validation

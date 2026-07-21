@@ -112,7 +112,7 @@ class AmbiguityAwareAgent:
         self.uncertainty: Optional[UncertaintyDetector] = None
         if not self.clarification.is_spontaneous:
             self.uncertainty = build_uncertainty_detector(
-                config.uncertainty, self.llm,
+                config.ambiguity, self.llm,
             )
         self.executor = CodeExecutor(
             workspace_root=config.code_exec.workspace_root,

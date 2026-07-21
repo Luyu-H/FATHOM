@@ -17,7 +17,7 @@ Provides two stages, each exposed as a directory-level function that callers
    requested.
 
 This module is import-only; orchestration (which stages to run, paths, etc.)
-lives in ``src/generate.py`` and ``configs/dataset_gen.yaml``.
+lives in ``src/generate.py`` and ``configs/data_gen.yaml``.
 """
 
 from __future__ import annotations

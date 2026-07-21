@@ -67,7 +67,7 @@ def run_rephrase(cfg) -> None:
 
 
 def main():
-    cfg_path = ROOT / "configs" / "dataset_gen.yaml"
+    cfg_path = ROOT / "configs" / "data_gen.yaml"
     if not cfg_path.exists():
         print(f"[ERROR] Config not found: {cfg_path}")
         sys.exit(1)

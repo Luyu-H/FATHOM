@@ -1,6 +1,6 @@
 """Entry point for computing evaluation metrics from saved run summaries.
 
-Configuration lives in ``configs/evaluate.yaml`` (separate from agent.yaml).
+Configuration lives in ``configs/evaluate.yaml`` (separate from runner.yaml).
 
 Usage examples::
 

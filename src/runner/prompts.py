@@ -57,65 +57,6 @@ Output STRICT JSON only (no markdown, no preamble):
 If the question is fully unambiguous, return {"ambiguous": false, "ambiguous_terms": [], "reason": "..."}."""
 
 
-UNCERTAINTY_DIRECT_SIMPLE_PROMPT = """You are an expert reviewer of climate-data analysis questions. Decide whether the user's question is operationally ambiguous, i.e. whether there exist multiple reasonable interpretations that would produce different numerical answers.
-
-Output STRICT JSON only (no markdown, no preamble):
-{
-  "ambiguous": true | false,
-  "ambiguous_terms": ["term1", "term2"],
-  "reason": "<one short sentence>"
-}
-If the question is fully unambiguous, return {"ambiguous": false, "ambiguous_terms": [], "reason": "..."}."""
-
-
-UNCERTAINTY_DIVERGENCE_PROMPT = """You are a climate-data analyst. For the question below, write a SHORT plan (5-20 lines) describing the concrete operationalization you would implement in code.
-
-FORMAT — each line is ONE ordered analysis step expressed as a function call with explicit parameters, e.g.:
-    1. select_variable(experiment=historical, source=CESM2, var=thetao)
-    2. subset_region(lat_range=[-5, 5], lon_range=[190, 240])
-    3. select_depth(depth_range_m=[0, 10])
-    4. temporal_subset(time_range=["1995-01", "2014-12"])
-    5. compute_anomaly(baseline=[1995, 2014], method=monthly_climatology)
-    6. aggregate(spatial=area_weighted_mean, temporal=annual_mean, vertical=mean)
-    7. final_reduction(op=linear_trend, unit=per_decade)
-Steps MUST be numbered and ordered in the exact sequence they would execute. Use concrete values (numbers, ranges, named methods); avoid prose and vague qualifiers like "appropriate" or "standard".
-
-Be SPECIFIC about every operational choice the question could be interpreted in multiple ways on. Cover whichever of the following apply to this question:
-- Terminological — explicit numeric threshold/criterion turning a qualitative concept into a mask or condition.
-- Methodological — concrete algorithm for each computation (weighting scheme, smoothing window, trend model, significance test, correlation method, etc.).
-- Vertical — explicit `depth_range_m=[zmin, zmax]` or named layer-selection rule.
-- Spatial — explicit `lat_range` / `lon_range` (or named bounding box) and the horizontal aggregation rule (area-weighted mean, sum, etc.).
-- Temporal — explicit `time_range=["YYYY-MM", "YYYY-MM"]`, climatology baseline period, and temporal-resampling rule (monthly raw, annual mean, seasonal, running mean window size, etc.).
-- Indicator — explicit formula and input variables for any derived quantity (e.g. `compute_N_star(formula="no3 - 16 * po4")`).
-
-Do NOT write code. Output the numbered plan as plain text only."""
-
-
-UNCERTAINTY_DIVERGENCE_JUDGE_PROMPT = """You are an expert reviewer of climate-data analysis plans.
-
-You are given N candidate operationalization plans, each produced independently for the same underlying data-analysis task. Decide whether ALL plans, executed on the same data, would yield essentially the SAME numerical answer.
-
-Compare the plans at EVERY granularity, including but not limited to:
-  1. Overall computation logic — the set and ordering of steps, what intermediate quantity each step produces, and what the final reduction returns.
-  2. Method choice per step — the algorithm or named method selected for each computation (e.g., area-weighted mean vs simple mean vs cosine-of-latitude weighting; monthly climatology vs full-period baseline for anomalies; OLS vs Theil-Sen for trends; Pearson vs Spearman correlation; nearest-neighbor vs bilinear regridding).
-  3. Specific parameter values — every concrete numeric argument fed to each method (depth-range bounds, lat/lon bounds, time-range bounds, baseline-period bounds, smoothing-window size, numeric thresholds, output unit such as per-year vs per-decade).
-  4. Derived-quantity formulas — input variables, coefficients, and functional form for any derived indicator (e.g., N* = NO3 − 16·PO4 differs from NO3 − 15·PO4).
-  5. Data selection — which experiment, source model, ensemble variant, vertical level, or variable name is used as input.
-
-DECISION RULES:
-- Plans are EQUIVALENT only if every aspect above agrees across all plans. Pure paraphrase or reordering of commutative steps is acceptable; semantically identical operations count as agreement.
-- ANY meaningful divergence at any granularity makes the plans NOT equivalent. In particular, do NOT dismiss a numeric-bound difference (e.g., depth 0-10 m vs 0-50 m, baseline 1995-2014 vs 1980-2010) as "minor" — different bounds change the numerical answer and must be flagged.
-- A divergence that is purely cosmetic (variable naming, comment phrasing, identical operation expressed in two notations) is NOT a real divergence.
-
-Output STRICT JSON only (no markdown, no preamble):
-{
-  "equivalent": true | false,
-  "divergent_aspects": ["<short label of each disagreeing aspect, e.g. 'depth range', 'trend method', 'baseline period'>"],
-  "reason": "<one or two short sentences naming the most consequential divergences>"
-}
-If all plans agree, return {"equivalent": true, "divergent_aspects": [], "reason": "..."}."""
-
-
 # =============================================================
 # 2a. Clarification — Direct (single-shot)
 # -------------------------------------------------------------

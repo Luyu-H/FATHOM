@@ -7,10 +7,6 @@ structured clarification loop.
 Available strategies
 --------------------
 - ``direct_prompt`` — single LLM judge call returning a boolean verdict.
-- ``divergence``    — sample N independent plans, then ask an LLM judge to
-                       decide whether all plans would yield the same
-                       numerical answer (i.e., agree on overall logic,
-                       method choice, and every concrete parameter value).
 """
 from __future__ import annotations
 
@@ -53,10 +49,6 @@ class UncertaintyDetector(ABC):
     def detect(self, question: str) -> UncertaintyResult: ...
 
 
-def _user_msg(question: str) -> str:
-    return f"Question:\n{question}"
-
-
 def _direct_user_msg(question: str) -> str:
     """User turn for the direct-prompt judge.
 
@@ -89,7 +81,7 @@ def _parsed_verdict(raw: str) -> Optional[Dict]:
 
 
 # =============================================================
-# 1) Direct prompt (LLM judge)
+# Direct prompt (LLM judge)
 # =============================================================
 
 class DirectPromptUncertainty(UncertaintyDetector):
@@ -157,98 +149,6 @@ class DirectPromptUncertainty(UncertaintyDetector):
 
 
 # =============================================================
-# 2) Divergence — sample N plans, judge equivalence with an LLM
-# =============================================================
-
-class DivergenceUncertainty(UncertaintyDetector):
-    """Generate N independent plans, then ask an LLM judge whether all
-    plans would produce the same numerical answer.
-
-    Motivation
-    ----------
-    Embedding-cosine / clustering criteria only capture overall textual or
-    logical structure; they are blind to small but consequential parameter
-    differences (e.g., depth 0-10 m vs 0-50 m, baseline 1995-2014 vs
-    1980-2010, OLS vs Theil-Sen trend). The LLM judge inspects every
-    granularity — overall logic, per-step method choice, concrete numeric
-    parameters, derived-quantity formulas, and data selection — and flags
-    the question as AMBIGUOUS as soon as any meaningful divergence exists.
-    """
-
-    def __init__(self, llm: LLMClient, n_samples: int = 5,
-                 sample_temperature: float = 0.8,
-                 judge_temperature: float = 0.0):
-        self._llm = llm
-        self._n = n_samples
-        self._sample_temp = sample_temperature
-        self._judge_temp = judge_temperature
-
-    @staticmethod
-    def _format_plans_block(plans: List[str]) -> str:
-        return "\n\n".join(f"[Plan {i + 1}]\n{p}" for i, p in enumerate(plans))
-
-    def detect(self, question):
-        plan_user = _user_msg(question)
-        plan_system = prompts.UNCERTAINTY_DIVERGENCE_PROMPT
-        responses = self._llm.chat(
-            messages=[Message("user", plan_user)],
-            system=plan_system,
-            temperature=self._sample_temp,
-            n=self._n,
-        )
-        plans = [r.text.strip() for r in responses if r.text and r.text.strip()]
-        llm_calls = [{
-            "role": "generate_plans",
-            "system_prompt": plan_system,
-            "user_prompt": plan_user,
-            "n_samples": self._n,
-            "raw_responses": [r.text for r in responses],
-        }]
-        if len(plans) < 2:
-            return UncertaintyResult(
-                level=AmbiguityLevel.CLEAR, score=0.0,
-                details={"strategy": "divergence",
-                         "n_plans": len(plans),
-                         "note": "insufficient plans for judging",
-                         "plans": plans,
-                         "llm_calls": llm_calls})
-
-        judge_system = prompts.UNCERTAINTY_DIVERGENCE_JUDGE_PROMPT
-        judge_user = (
-            f"Candidate plans (numbered):\n\n{self._format_plans_block(plans)}"
-        )
-        judge_resp = self._llm.chat(
-            messages=[Message("user", judge_user)],
-            system=judge_system,
-            temperature=self._judge_temp,
-        )[0]
-        llm_calls.append({
-            "role": "judge_equivalence",
-            "system_prompt": judge_system,
-            "user_prompt": judge_user,
-            "raw_response": judge_resp.text,
-        })
-        data = parse_json_block(judge_resp.text) or {}
-        equivalent = bool(data.get("equivalent", True))
-        divergent_aspects = [
-            a for a in data.get("divergent_aspects", []) if isinstance(a, str)
-        ]
-        ambiguous = not equivalent
-
-        return UncertaintyResult(
-            level=AmbiguityLevel.AMBIGUOUS if ambiguous else AmbiguityLevel.CLEAR,
-            score=1.0 if ambiguous else 0.0,
-            details={"strategy": "divergence",
-                     "n_plans": len(plans),
-                     "equivalent": equivalent,
-                     "divergent_aspects": divergent_aspects,
-                     "reason": data.get("reason", ""),
-                     "judge_raw_text": judge_resp.text,
-                     "plans": plans,
-                     "llm_calls": llm_calls})
-
-
-# =============================================================
 # Factory
 # =============================================================
 
@@ -259,22 +159,6 @@ def build_uncertainty_detector(cfg, llm: LLMClient) -> UncertaintyDetector:
             llm,
             temperature=cfg.direct_prompt.temperature,
         )
-    if s == "direct_prompt_simple":
-        return DirectPromptUncertainty(
-            llm,
-            temperature=cfg.direct_prompt_simple.temperature,
-            system_prompt=prompts.UNCERTAINTY_DIRECT_SIMPLE_PROMPT,
-            strategy_name="direct_prompt_simple",
-        )
-    if s == "divergence":
-        d = cfg.divergence
-        return DivergenceUncertainty(
-            llm,
-            n_samples=d.n_samples,
-            sample_temperature=d.sample_temperature,
-            judge_temperature=d.judge_temperature,
-        )
     raise ValueError(
-        f"Unknown uncertainty strategy: {s}. "
-        "Supported: 'direct_prompt', 'direct_prompt_simple', 'divergence'."
+        f"Unknown uncertainty strategy: {s}. Supported: 'direct_prompt'."
     )

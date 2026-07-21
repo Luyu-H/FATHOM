@@ -1,7 +1,7 @@
 """Unified LLM client supporting OpenAI / Anthropic / Gemini / DeepSeek / Qwen.
 
 Usage:
-    from src.agent.llm_client import build_llm_client, Message
+    from src.runner.llm_client import build_llm_client, Message
     llm = build_llm_client(cfg.llm)
     [resp] = llm.chat(messages=[Message("user", "hi")], system="be helpful")
 """

@@ -67,7 +67,7 @@ data:
 
 eval:
   output_dir: outputs/
-  run_name: ${llm.model}-r${oc.select:llm.reasoning_effort,off}_${uncertainty.strategy}_${clarification.strategy}
+  run_name: ${llm.model}-r${oc.select:llm.reasoning_effort,off}_${ambiguity.strategy}_${clarification.strategy}
   log_level: INFO
   resume: true # skip already completed evaluations
   limit: null # limit the number of questions to evaluate, set to null for no limit
