@@ -1,0 +1,80 @@
+prompt_id,prompt_text
+P1,"
+You are an expert in climate-data analysis working with CMIP6 ocean model output. CMIP6 (Coupled Model Intercomparison Project Phase 6) is a coordinated international effort that provides standardized climate simulations of past, present, and future climate conditions.
+
+============================================================
+SIMULATION CONFIGURATION
+============================================================
+The question targets the following simulation(s). Use only these experiment / source-model combinations; do not substitute alternatives.
+{configuration}
+
+============================================================
+AVAILABLE VARIABLES
+============================================================
+The following ocean variables are available. All variables are monthly resolution. Variable names in NetCDF files exactly match the variable_id below. Units are uniform across all experiments and source models.
+
+  variable_id   long_name                                            unit
+  -----------   --------------------------------------------------   -----------
+  thetao        Sea Water Potential Temperature                      degC
+  so            Sea Water Salinity                                   0.001
+  ph            Sea Water pH                                         1
+  dissic        Dissolved Inorganic Carbon Concentration             mol m-3
+  dissoc        Dissolved Organic Carbon Concentration               mol m-3
+  talk          Total Alkalinity                                     mol m-3
+  intdic        Dissolved Inorganic Carbon Content                   kg m-2
+  intdoc        Dissolved Organic Carbon Content                     kg m-2
+  intpoc        Particulate Organic Carbon Content                   kg m-2
+  no3           Dissolved Nitrate Concentration                      mol m-3
+  po4           Total Dissolved Inorganic Phosphorus Concentration   mol m-3
+  si            Total Dissolved Inorganic Silicon Concentration      mol m-3
+  dfe           Dissolved Iron Concentration                         mol m-3
+  o2            Dissolved Oxygen Concentration                       mol m-3
+  o2sat         Dissolved Oxygen Concentration at Saturation         mol m-3
+  chl           Mass Concentration of Total Phytoplankton 
+                Expressed as Chlorophyll in Sea Water                kg m-3
+  phycos        Sea Surface Phytoplankton Carbon Concentration       mol m-3
+  uo            Sea Water X Velocity                                 m s-1
+  vo            Sea Water Y Velocity                                 m s-1
+  wo            Sea Water Vertical Velocity                          m s-1
+  umo           Ocean Mass X Transport                               kg s-1
+  vmo           Ocean Mass Y Transport                               kg s-1
+  wmo           Upward Ocean Mass Transport                          kg s-1
+  areacello     Grid-Cell Area for Ocean Variables                   m2
+
+============================================================
+DATA STORAGE & FILE LAYOUT
+============================================================
+All NetCDF files are organized under a common root directory using the following hierarchy:
+
+  <data_root>/<experiment_id>/<source_id>/<variable_id>/<file>.nc
+
+The concrete value of `<data_root>` is not specified here. It will be provided separately at code-generation time.
+
+For each (experiment_id, source_id, variable_id) leaf, one or more NetCDF files may be present. For time-varying variables, each filename encodes its temporal coverage as <YYYYMM>-<YYYYMM> (inclusive start month to end month). When the question targets a specific time period, identify and open only the file(s) whose encoded range overlaps that period — do not load unnecessary chunks. The time-axis length may differ across files of the same variable.
+
+============================================================
+SOURCE-MODEL DETAILS
+============================================================
+Source-model-specific details (file-name templates, grid configuration, dimensions, coordinate variables, and special cases) for the simulation(s) listed above:
+
+{source_info}
+
+============================================================
+QUESTION CONVENTIONS
+============================================================
+Apply the following conventions when interpreting the question:
+
+- Time period: any time range stated in the question — whether at month granularity (YYYY-MM ~ YYYY-MM) or year granularity (YYYY ~ YYYY), and regardless of the separator used (~, to, –, etc.) — is inclusive on both ends. Include the full start and end periods in the computation.
+
+- Depth handling: judge membership by each vertical layer's center depth.
+  - Depth range: a layer participates in full when its center depth lies within the range; layers are not partially weighted.
+  - Single depth (e.g., at depth X m): use the layer whose center depth is closest to X.
+  - No depth specified: compute over all vertical layers.
+
+============================================================
+TASK
+============================================================
+Solve the question below using the dataset(s) described above. Identify the appropriate variable(s) from the variable list, apply the necessary scientific processing, and produce the final answer. The final answer must be either a single numerical value or a yes/no decision.
+
+Question:
+"

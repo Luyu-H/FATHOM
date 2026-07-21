@@ -1,0 +1,38 @@
+# Config for ``python -m src.evaluate``.
+
+# Reads summary files written by ``src/run.py`` and produces
+# mode-aware metric reports under ``<run_dir>/<metrics_subdir>/``.
+
+eval:
+  # Root that contains per-run subdirectories written by src.run.
+  results_root: outputs/
+
+  # Restrict evaluation to a single run by name (matches a subdirectory of results_root).
+  # Leave null to evaluate every run in the root path.
+  run_name: null
+
+  # Where the metric JSONs land within each run directory.
+  metrics_subdir: metrics
+
+  log_level: INFO
+
+lexicon:
+  path: data/ambiguous_term_corpus.jsonl
+
+# Scalar-answer correctness for different relative error tolerances.
+scalar:
+  tolerances:
+    - { name: rel_1e-3,  rel_tol: 0.001 }
+    - { name: rel_1pct,  rel_tol: 0.01 }
+    - { name: rel_5pct,  rel_tol: 0.05 }
+    - { name: rel_10pct, rel_tol: 0.10 }
+    - { name: rel_25pct, rel_tol: 0.25 }
+  primary: rel_5pct
+  zero_guard: 1.0e-30
+  abs_floor: 1.0e-15
+
+breakdowns:
+  overall: true
+  by_level: true
+  by_ambiguity_type: true
+  per_record: true

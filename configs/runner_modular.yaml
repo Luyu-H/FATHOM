@@ -1,0 +1,79 @@
+# Config for ``python -m src.run_modular``.
+
+# Support two modes of the modular pipeline, each with its own strategy options:
+#   * mode: ambiguity_only
+#       Runs only the ambiguity identifier. No oracle, no clarification, no code generation. 
+#   * mode: clarification_only
+#       Each question is treated as already known to be ambiguous and runs the structured clarification loop followed by code generation and execution. 
+#       Strategies: direct / planning / candidate.
+
+mode: clarification_only  # ambiguity_only / clarification_only
+
+llm:
+  provider: openai # openai / anthropic / gemini / deepseek / qwen
+  model: gpt-5.4 # gpt-5.4 / o3-2025-04-16 / deepseek-v4-flash / qwen3-max-2026-01-23 / claude-sonnet-4-6
+  api_key_env: OPENAI_API_KEY # OPENAI / ANTHROPIC / GEMINI / DEEPSEEK / DASHSCOPE
+  max_tokens: 32768
+  temperature: 0.2
+  max_retries: 3
+  request_interval: 1.0
+  # DeepSeek only: max / off
+  reasoning_effort: off
+
+# Read only when ``mode == ambiguity_only``.
+ambiguity:
+  strategy: direct_prompt
+  direct_prompt:
+    temperature: 0.2
+
+# Read only when ``mode == clarification_only``.
+clarification:
+  strategy: candidate # direct / candidate / planning
+
+  max_turns: 5
+  questions_per_turn: 3
+
+  direct:
+    temperature: 0.2
+
+  candidate:
+    n_candidates: 8
+    gen_temperature: 0.8
+    pick_temperature: 0.2
+
+  planning:
+    plan_max_lines: 15
+    temperature: 0.2
+
+# Read only when ``mode == clarification_only`` for code generation and execution.
+code_exec:
+  workspace_root: tmp/
+  timeout_seconds: 900
+  python_executable: python
+  max_attempts: 3
+  codegen_temperature: 0.2
+
+# Read only when ``mode == clarification_only`` for oracle.
+oracle:
+  lexicon_path: data/ambiguous_term_corpus.jsonl
+  provider: deepseek # openai / anthropic / gemini / deepseek / qwen
+  model: deepseek-v4-pro
+  api_key_env: DEEPSEEK_API_KEY
+  max_tokens: 4096
+  temperature: 0.0
+  max_retries: 3
+  request_interval: 1.0
+
+data:
+  qa_data_dir: data/QA_dataset/test
+  question_pattern: "*.json"
+  # ``ambiguity_only`` evaluates every item.
+  ambiguity_gold_field: ambiguous_terms
+  data_root: data/scientific_database/test
+
+eval:
+  output_dir: outputs/
+  run_name: ${mode}_a-${ambiguity.strategy}_c-${clarification.strategy}_${llm.model}-r${oc.select:llm.reasoning_effort,off}
+  log_level: INFO
+  resume: true # skip already completed evaluations
+  limit: null # limit the number of questions to evaluate, set to null for no limit

@@ -1,0 +1,55 @@
+cmip6:
+  root: data/scientific_database/test
+  experiment:
+    historical:
+      - CESM2
+      - GFDL-ESM4
+      - MPI-ESM1-2-LR
+    ssp245:
+      - CESM2
+      - GFDL-ESM4
+      - MPI-ESM1-2-LR
+
+level1:
+  template_path: data/templates/level1_tasks.csv
+  num: 0
+  task_id_list: []
+
+level2:
+  template_path: data/templates/level2_tasks.csv
+  num: 0
+  task_id_list: []
+
+level3:
+  template_path: data/templates/level3_tasks.csv
+  num: 0
+  task_id_list: []
+
+generation:
+  num_examples_per_file: 500
+  prompt_path: data/templates/prompts.csv
+  output_dir: data/QA_dataset/new/
+
+post_processing:
+  qa_dir: data/QA_dataset/new/                                     # input dir (from generation step)
+  output_dir: data/QA_dataset/new/                   # output dir for post-processed QA
+  ops_path: data/ambiguous_term_corpus.jsonl
+  levels:
+    - level1
+    - level2
+    - level3
+  rephrase:
+    keep_original_question: true   # keep original text under `original_question`
+
+pipeline:
+  run_generate: true
+  run_ambiguous_terms: true
+  run_rephrase: false
+
+llm_settings:
+  model: gpt-5.4-mini
+  temperature: 0.7
+  max_retries: 3
+  reasoning_effort: null # null for model without reasoning support
+  max_output_tokens: 500
+  request_interval: 2.0
