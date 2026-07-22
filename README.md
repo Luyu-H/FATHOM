@@ -4,9 +4,9 @@
 
 Luyu Han<sup>1</sup>, Bin Lu<sup>2</sup>, Shangzhi Yuan<sup>2</sup>, Lei Zhou<sup>3</sup>, Xinbing Wang<sup>2</sup>, Chengshan Wang<sup>4</sup>, Meng Jin<sup>1</sup>
 
-<sup>1</sup> School of Artificial Intelligence, Shanghai Jiao Tong University &nbsp;&nbsp;
-<sup>2</sup> School of Information Science and Electronic Engineering, Shanghai Jiao Tong University &nbsp;&nbsp;
-<sup>3</sup> School of Oceanography, Shanghai Jiao Tong University &nbsp;&nbsp;
+<sup>1</sup> School of Artificial Intelligence, Shanghai Jiao Tong University  
+<sup>2</sup> School of Information Science and Electronic Engineering, Shanghai Jiao Tong University  
+<sup>3</sup> School of Oceanography, Shanghai Jiao Tong University  
 <sup>4</sup> School of Earth Sciences and Resources, China University of Geosciences
 </div>
 
