@@ -129,7 +129,7 @@ python -m src.generate
 > Detailed configuration options and stage-by-stage instructions are available in
 > **[`src/data_gen/README.md`](src/data_gen/README.md)**.
 
-### 3.2 Reproducing the Experiments
+### 3.2 Experiment
 
 By default, the runner configurations target the **`test`** split, so the commands below work out of the box once the `test` scientific data is in place. Do not modify the directory structure or file names in the scientific database, as the runner relies on the original layout.
 
@@ -200,8 +200,6 @@ python -m src.evaluate_modular eval.mode=ambiguity_only
 ---
 
 ## 5. Citation
-
-The paper is currently under review. Citation information will be added upon acceptance.
 
 ```bibtex
 % Coming soon.
