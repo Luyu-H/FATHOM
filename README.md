@@ -68,7 +68,7 @@ component is run and reproduced.
 
 For convenience, we also provide the curated CMIP6 subset on Hugging Face (https://huggingface.co/datasets/Luyu-H/CMIP6_scientific_database_for_FATHOM). We recommend starting with the **`test/`** subset for quick reproduction, and downloading the full dataset only when reproducing the complete benchmark.
 
-The active data root is set by `cmip6.root` in `configs/data_gen.yaml` and `data.data_root` in the runner configs. Both default to the `test` subset.
+The active data root is set by `data.data_root` in the runner configs. By default, the runner uses the `test` subset.
 
 ### 2.2 Ambiguous Term Corpus
 
@@ -131,7 +131,13 @@ python -m src.generate
 
 ### 3.2 Experiment
 
-By default, the runner configurations target the **`test`** split, so the commands below work out of the box once the `test` scientific data is in place. Do not modify the directory structure or file names in the scientific database, as the runner relies on the original layout.
+By default, the runner configurations target the **`test`** split. Download the test set by running:
+
+```bash
+python data/scientific_database/test/download_testset.py
+```
+
+Do not modify the directory structure or file names in the scientific database, as the runner relies on the original layout.
 
 All runs write to `outputs/<run_name>/{full_records,summary}/`, and the evaluation scripts write metric reports to `outputs/<run_name>/metrics/`.
 
