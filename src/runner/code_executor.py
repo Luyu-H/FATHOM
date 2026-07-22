@@ -89,7 +89,12 @@ def parse_final_answer(stdout: str) -> Optional[str]:
 class CodeExecutor:
     def __init__(self, workspace_root: str, timeout_seconds: int = 600,
                  python_executable: str = "python"):
-        self.workspace_root = Path(workspace_root)
+        # Resolve to an absolute path up front. ``cwd`` is set to the per-run
+        # directory when the script is executed, so a *relative* script path
+        # (or workspace_root) would be re-resolved against that cwd and the
+        # run-dir prefix would appear twice
+        # (``tmp/run_x/tmp/run_x/task.py`` -> No such file).
+        self.workspace_root = Path(workspace_root).resolve()
         self.workspace_root.mkdir(parents=True, exist_ok=True)
         self.timeout = timeout_seconds
         self.python = python_executable

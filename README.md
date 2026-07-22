@@ -64,7 +64,7 @@ component is run and reproduced.
 - **Default location:** `data/scientific_database/`
 - **`full/`**: the complete set (>800 GB) of CMIP6 files used by the benchmark. The folder provides a manifest listing all required file metadata and the information needed to retrieve each file from the official ESGF search portal (https://esgf-metagrid.cloud.dkrz.de/search).
   together with its download link. Follow that list to fetch the data locally.
-- **`test/`**: a lightweight subset (<4 GB) for quick reproduction. It contains file metadata required by the benchmark test split, allowing the complete evaluation pipeline to be run without downloading the full scientific database.
+- **`test/`**: a lightweight subset (<5 GB) for quick reproduction. It contains file metadata required by the benchmark test split, allowing the complete evaluation pipeline to be run without downloading the full scientific database.
 
 For convenience, we also provide the curated CMIP6 subset on Hugging Face (https://huggingface.co/datasets/Luyu-H/CMIP6_scientific_database_for_FATHOM). We recommend starting with the **`test/`** subset for quick reproduction, and downloading the full dataset only when reproducing the complete benchmark.
 
@@ -149,9 +149,10 @@ This setting allows LLMs to decide on its own whether to answer directly or ask 
 # Run a model and override provider / model / key-env
 python -m src.run llm.provider=openai llm.model=gpt-5.4 llm.api_key_env=OPENAI_API_KEY
 
-# Compute metrics over the run(s)
-python -m src.evaluate
+# Compute metrics over the run
+python -m src.evaluate eval.run_name=<run_folder>
 ```
+Replace `<run_folder>` with the name of your run directory.
 
 #### Setting 2 — Agent-Assisted Disambiguation (RQ2)
 
@@ -159,7 +160,7 @@ Ambiguous tasks can also be evaluated with a structured clarification loop again
 
 ```bash
 python -m src.run_modular mode=clarification_only clarification.strategy=planning
-python -m src.evaluate_modular eval.mode=clarification_only
+python -m src.evaluate_modular eval.mode=clarification_only eval.run_name=<run_folder>
 ```
 
 #### Setting 3 - Ambiguity Recognition (RQ3)
@@ -168,7 +169,7 @@ To measure how well models recognize ambiguity of the given query when explicitl
 
 ```bash
 python -m src.run_modular mode=ambiguity_only
-python -m src.evaluate_modular eval.mode=ambiguity_only
+python -m src.evaluate_modular eval.mode=ambiguity_only eval.run_name=<run_folder>
 ```
 
 ---

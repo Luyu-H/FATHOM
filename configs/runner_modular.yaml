@@ -10,9 +10,9 @@
 mode: clarification_only  # ambiguity_only / clarification_only
 
 llm:
-  provider: openai # openai / anthropic / gemini / deepseek / qwen
-  model: gpt-5.4 # gpt-5.4 / o3-2025-04-16 / deepseek-v4-flash / qwen3-max-2026-01-23 / claude-sonnet-4-6
-  api_key_env: OPENAI_API_KEY # OPENAI / ANTHROPIC / GEMINI / DEEPSEEK / DASHSCOPE
+  provider: anthropic # openai / anthropic / gemini / deepseek / qwen
+  model: claude-sonnet-4-6 # gpt-5.4 / o3-2025-04-16 / deepseek-v4-flash / qwen3-max-2026-01-23 / claude-sonnet-4-6
+  api_key_env: ANTHROPIC_API_KEY # OPENAI / ANTHROPIC / GEMINI / DEEPSEEK / DASHSCOPE
   max_tokens: 32768
   temperature: 0.2
   max_retries: 3

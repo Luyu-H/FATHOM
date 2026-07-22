@@ -27,23 +27,11 @@ Two metric families are computed:
                                                         working code" from "wrote
                                                         working but wrong code")
 
-All metrics are computed several ways:
+Metrics are reported two ways, plus the raw per-record rows:
     1.  **Overall** — every record in the run.
     2.  **By level** — split by ``level`` (1/2/3).
-    3.  **By ambiguity type** — for each lexicon category (Terminological,
-        Methodological, Spatial, Temporal, Vertical, Indicator), the subset of
-        records whose gold ambiguous-term set contains at least one term of
-        that category.
-    4.  **By level × ambiguity type** — the cartesian breakdown.
-    5.  **By task type** — split by analysis type (Descriptive Statistics,
-        Vertical Profile, Temporal Trend, Comparative Assessment, Correlation,
-        Change & Anomaly, Model Ensemble), a hard partition derived from each
-        record's ``task_id`` (one record → exactly one task type).
-    6.  **By level × task type** — the cartesian breakdown.
-    7.  **By ambiguity complexity** — split by the number of gold ambiguous
-        terms (``len(gold_term_ids)``); a hard partition (``complexity_0`` =
-        unambiguous, ``complexity_1``, ``complexity_2``, ...).
-    8.  **By level × ambiguity complexity** — the cartesian breakdown.
+    3.  **Per record** — one metric row per record (debugging individual
+        examples).
 """
 from __future__ import annotations
 
@@ -823,71 +811,25 @@ def compute_run_metrics(
 ) -> Dict[str, Any]:
     """Load all summary files from one run directory and aggregate metrics.
 
-    Returns a single dict with overall + per-level + per-category +
-    level×category breakdowns, plus the per-record metric rows (useful for
-    debugging individual examples).
+    Returns a single dict with overall + per-level breakdowns, plus the
+    per-record metric rows (useful for debugging individual examples).
     """
     lex = SimpleLexicon(lexicon_path)
     raw_records = load_summary_records(summary_dir)
     rec_metrics = [compute_record_metrics(r, lex, scalar_cfg) for r in raw_records]
-    categories = lex.all_categories()
 
     by_level = split_by_level(rec_metrics)
-    by_cat = split_by_category(rec_metrics, categories)
-    by_task = split_by_task_type(rec_metrics)
-    by_complexity = split_by_ambiguity_complexity(rec_metrics)
-
-    level_x_cat: Dict[str, Dict[str, Any]] = {}
-    for lvl_key, lvl_recs in by_level.items():
-        level_x_cat[lvl_key] = {}
-        cat_split = split_by_category(lvl_recs, categories)
-        for c in categories:
-            level_x_cat[lvl_key][c] = aggregate(cat_split[c], scalar_cfg)
-
-    # Level × task-type: task type is a partition, so only report the
-    # buckets that actually occur at each level (present in that level's data).
-    level_x_task: Dict[str, Dict[str, Any]] = {}
-    for lvl_key, lvl_recs in by_level.items():
-        task_split = split_by_task_type(lvl_recs)
-        level_x_task[lvl_key] = {
-            t: aggregate(task_split[t], scalar_cfg)
-            for t in _ordered_task_keys(task_split)
-        }
-
-    # Level × ambiguity-complexity: same partition logic, keyed by the number
-    # of gold ambiguous terms; only complexities present at a level appear.
-    level_x_complexity: Dict[str, Dict[str, Any]] = {}
-    for lvl_key, lvl_recs in by_level.items():
-        cx_split = split_by_ambiguity_complexity(lvl_recs)
-        level_x_complexity[lvl_key] = {
-            k: aggregate(cx_split[k], scalar_cfg)
-            for k in _ordered_complexity_keys(cx_split)
-        }
 
     return {
         "summary_dir": str(summary_dir),
         "lexicon_path": lexicon_path,
         "n_records": len(rec_metrics),
-        "categories": categories,
-        "task_types": _ordered_task_keys(by_task),
-        "ambiguity_complexities": _ordered_complexity_keys(by_complexity),
         "scalar_tolerances": [
             {"name": k, "rel_tol": v} for k, v in scalar_cfg.tolerances
         ],
         "primary_scalar_tolerance": scalar_cfg.primary,
         "overall": aggregate(rec_metrics, scalar_cfg),
         "by_level": {k: aggregate(v, scalar_cfg) for k, v in by_level.items()},
-        "by_ambiguity_type": {c: aggregate(by_cat[c], scalar_cfg) for c in categories},
-        "by_level_and_ambiguity_type": level_x_cat,
-        "by_task_type": {
-            t: aggregate(by_task[t], scalar_cfg) for t in _ordered_task_keys(by_task)
-        },
-        "by_level_and_task_type": level_x_task,
-        "by_ambiguity_complexity": {
-            k: aggregate(by_complexity[k], scalar_cfg)
-            for k in _ordered_complexity_keys(by_complexity)
-        },
-        "by_level_and_ambiguity_complexity": level_x_complexity,
         "per_record": [_record_to_dict(r) for r in rec_metrics],
     }
 
@@ -965,11 +907,8 @@ def write_metrics(
 ) -> Dict[str, Path]:
     """Persist the metric breakdowns into ``out_dir``. Returns paths written.
 
-    ``breakdowns`` is a name->bool map (overall / by_level /
-    by_ambiguity_type / by_level_and_ambiguity_type / by_task_type /
-    by_level_and_task_type / by_ambiguity_complexity /
-    by_level_and_ambiguity_complexity / per_record). Missing keys default to
-    True so callers can selectively turn slices off.
+    ``breakdowns`` is a name->bool map (overall / by_level / per_record).
+    Missing keys default to True so callers can selectively turn slices off.
     """
     breakdowns = breakdowns or {}
     def _on(name: str) -> bool:
@@ -980,7 +919,6 @@ def write_metrics(
     if _on("overall"):
         overall = {k: metrics[k] for k in (
             "summary_dir", "lexicon_path", "n_records",
-            "categories", "task_types", "ambiguity_complexities",
             "scalar_tolerances", "primary_scalar_tolerance", "overall",
         )}
         written["overall"] = out_dir / "overall.json"
@@ -989,44 +927,6 @@ def write_metrics(
     if _on("by_level"):
         written["by_level"] = out_dir / "by_level.json"
         _atomic_write_json(written["by_level"], metrics["by_level"])
-
-    if _on("by_ambiguity_type"):
-        written["by_ambiguity_type"] = out_dir / "by_ambiguity_type.json"
-        _atomic_write_json(written["by_ambiguity_type"], metrics["by_ambiguity_type"])
-
-    if _on("by_level_and_ambiguity_type"):
-        written["by_level_and_ambiguity_type"] = out_dir / "by_level_and_ambiguity_type.json"
-        _atomic_write_json(
-            written["by_level_and_ambiguity_type"],
-            metrics["by_level_and_ambiguity_type"],
-        )
-
-    if _on("by_task_type"):
-        written["by_task_type"] = out_dir / "by_task_type.json"
-        _atomic_write_json(written["by_task_type"], metrics["by_task_type"])
-
-    if _on("by_level_and_task_type"):
-        written["by_level_and_task_type"] = out_dir / "by_level_and_task_type.json"
-        _atomic_write_json(
-            written["by_level_and_task_type"],
-            metrics["by_level_and_task_type"],
-        )
-
-    if _on("by_ambiguity_complexity"):
-        written["by_ambiguity_complexity"] = out_dir / "by_ambiguity_complexity.json"
-        _atomic_write_json(
-            written["by_ambiguity_complexity"],
-            metrics["by_ambiguity_complexity"],
-        )
-
-    if _on("by_level_and_ambiguity_complexity"):
-        written["by_level_and_ambiguity_complexity"] = (
-            out_dir / "by_level_and_ambiguity_complexity.json"
-        )
-        _atomic_write_json(
-            written["by_level_and_ambiguity_complexity"],
-            metrics["by_level_and_ambiguity_complexity"],
-        )
 
     if _on("per_record"):
         written["per_record"] = out_dir / "per_record.json"

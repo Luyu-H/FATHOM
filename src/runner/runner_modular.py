@@ -33,6 +33,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 
 from . import prompts
@@ -172,7 +173,11 @@ class ClarificationOnlyAgent:
                 "config.data.data_root is required so the agent can tell "
                 "the codegen LLM what to substitute for `<data_root>`."
             )
-        self.data_root = str(data_root)
+        # Absolute path (relative to the original launch dir, robust to any
+        # Hydra chdir). The codegen script runs with cwd set to its isolated
+        # run directory, so a relative data root would resolve against that
+        # run dir and the dataset would not be found.
+        self.data_root = to_absolute_path(str(data_root))
 
     # ------------------------------------------------------------------
     # Public entry point

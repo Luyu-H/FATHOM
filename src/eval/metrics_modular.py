@@ -2,7 +2,7 @@
 
 Two evaluation modes, two distinct headlines — but both share the same
 output skeleton as ``src.eval.metrics`` so the same breakdown layout
-(overall / by_level / by_ambiguity_type / level×category) applies.
+(overall / by_level / per_record) applies.
 
 Mode A — ``ambiguity_only``
     The detector's verdict IS the final output, so we score it as a
@@ -352,25 +352,16 @@ def compute_ambiguity_run_metrics(
     lex = SimpleLexicon(lexicon_path)
     raw = load_summary_records(summary_dir)
     recs = [compute_ambiguity_record_metrics(r, lex) for r in raw]
-    categories = lex.all_categories()
 
     by_level = _split_by_level_amb(recs)
-    by_cat = _split_by_category_amb(recs, categories)
-    level_x_cat: Dict[str, Dict[str, Any]] = {}
-    for lvl_key, lvl_recs in by_level.items():
-        cat_split = _split_by_category_amb(lvl_recs, categories)
-        level_x_cat[lvl_key] = {c: aggregate_ambiguity(cat_split[c]) for c in categories}
 
     return {
         "mode": "ambiguity_only",
         "summary_dir": str(summary_dir),
         "lexicon_path": lexicon_path,
         "n_records": len(recs),
-        "categories": categories,
         "overall": aggregate_ambiguity(recs),
         "by_level": {k: aggregate_ambiguity(v) for k, v in by_level.items()},
-        "by_ambiguity_type": {c: aggregate_ambiguity(by_cat[c]) for c in categories},
-        "by_level_and_ambiguity_type": level_x_cat,
         "per_record": [_amb_record_to_dict(r) for r in recs],
     }
 
@@ -389,10 +380,8 @@ def compute_clarification_run_metrics(
     extras: List[CoverageExtras] = [
         _coverage_extras(r, fr.gold_term_ids) for r, fr in zip(raw, full_recs)
     ]
-    categories = lex.all_categories()
 
     by_level = _split_by_level_full(full_recs)
-    by_cat = _split_by_category_full(full_recs, categories)
     # Index extras alongside full_recs so per-group coverage stays aligned.
     extras_by_id: Dict[Optional[str], CoverageExtras] = {
         fr.record_id: ex for fr, ex in zip(full_recs, extras)
@@ -404,25 +393,17 @@ def compute_clarification_run_metrics(
         base["coverage"] = cov
         return base
 
-    level_x_cat: Dict[str, Dict[str, Any]] = {}
-    for lvl_key, lvl_recs in by_level.items():
-        cat_split = _split_by_category_full(lvl_recs, categories)
-        level_x_cat[lvl_key] = {c: _agg(cat_split[c]) for c in categories}
-
     return {
         "mode": "clarification_only",
         "summary_dir": str(summary_dir),
         "lexicon_path": lexicon_path,
         "n_records": len(full_recs),
-        "categories": categories,
         "scalar_tolerances": [
             {"name": k, "rel_tol": v} for k, v in scalar_cfg.tolerances
         ],
         "primary_scalar_tolerance": scalar_cfg.primary,
         "overall": _agg(full_recs),
         "by_level": {k: _agg(v) for k, v in by_level.items()},
-        "by_ambiguity_type": {c: _agg(by_cat[c]) for c in categories},
-        "by_level_and_ambiguity_type": level_x_cat,
         "per_record": [
             {**_full_record_to_dict(fr),
              "full_coverage": ex.full_coverage,
@@ -544,8 +525,7 @@ def write_modular_metrics(
     """Persist metric slices into ``out_dir``. Mirrors :func:`metrics.write_metrics`.
 
     Keys in ``breakdowns`` default to True. Recognised keys: ``overall``,
-    ``by_level``, ``by_ambiguity_type``, ``by_level_and_ambiguity_type``,
-    ``per_record``.
+    ``by_level``, ``per_record``.
     """
     breakdowns = breakdowns or {}
     def _on(name: str) -> bool:
@@ -554,8 +534,7 @@ def write_modular_metrics(
     written: Dict[str, Path] = {}
 
     if _on("overall"):
-        keys = ["mode", "summary_dir", "lexicon_path", "n_records",
-                "categories", "overall"]
+        keys = ["mode", "summary_dir", "lexicon_path", "n_records", "overall"]
         if "scalar_tolerances" in metrics:
             keys.extend(["scalar_tolerances", "primary_scalar_tolerance"])
         overall = {k: metrics[k] for k in keys if k in metrics}
@@ -565,19 +544,6 @@ def write_modular_metrics(
     if _on("by_level"):
         written["by_level"] = out_dir / "by_level.json"
         _atomic_write_json(written["by_level"], metrics["by_level"])
-
-    if _on("by_ambiguity_type"):
-        written["by_ambiguity_type"] = out_dir / "by_ambiguity_type.json"
-        _atomic_write_json(written["by_ambiguity_type"], metrics["by_ambiguity_type"])
-
-    if _on("by_level_and_ambiguity_type"):
-        written["by_level_and_ambiguity_type"] = (
-            out_dir / "by_level_and_ambiguity_type.json"
-        )
-        _atomic_write_json(
-            written["by_level_and_ambiguity_type"],
-            metrics["by_level_and_ambiguity_type"],
-        )
 
     if _on("per_record"):
         written["per_record"] = out_dir / "per_record.json"

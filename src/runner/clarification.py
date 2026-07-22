@@ -94,11 +94,10 @@ class ClarificationStrategy(ABC):
     """Generates clarification questions; returns None to stop the loop."""
 
     def __init__(self, llm: LLMClient, max_turns: int,
-                 questions_per_turn: int, tone: str):
+                 questions_per_turn: int):
         self.llm = llm
         self.max_turns = max_turns
         self.questions_per_turn = questions_per_turn
-        self.tone = tone
         self._plan: Optional[str] = None      # only set by planning strategy
         # Captures every LLM call made during the most recent
         # ``make_questions`` invocation. The agent reads + stores this on
@@ -183,9 +182,9 @@ class SpontaneousClarification(ClarificationStrategy):
 # =============================================================
 
 class DirectClarification(ClarificationStrategy):
-    def __init__(self, llm, max_turns, questions_per_turn, tone,
+    def __init__(self, llm, max_turns, questions_per_turn,
                  temperature: float = 0.0):
-        super().__init__(llm, max_turns, questions_per_turn, tone)
+        super().__init__(llm, max_turns, questions_per_turn)
         self.temperature = temperature
 
     def make_questions(self, question, context, history, ambiguous_terms):
@@ -193,7 +192,7 @@ class DirectClarification(ClarificationStrategy):
         if not self.should_continue(history):
             return None
         sys = prompts.CLARIFY_DIRECT_PROMPT.format(
-            tone=self.tone, n=self.questions_per_turn,
+            n=self.questions_per_turn,
         )
         user = (
             f"Original question:\n{question}\n\n"
@@ -233,11 +232,11 @@ class DirectClarification(ClarificationStrategy):
 # =============================================================
 
 class CandidateClarification(ClarificationStrategy):
-    def __init__(self, llm, max_turns, questions_per_turn, tone,
+    def __init__(self, llm, max_turns, questions_per_turn,
                  n_candidates: int = 4,
                  gen_temperature: float = 0.4,
                  pick_temperature: float = 0.0):
-        super().__init__(llm, max_turns, questions_per_turn, tone)
+        super().__init__(llm, max_turns, questions_per_turn)
         self.n_candidates = n_candidates
         self.gen_temperature = gen_temperature
         self.pick_temperature = pick_temperature
@@ -249,7 +248,7 @@ class CandidateClarification(ClarificationStrategy):
 
         # Stage 1: generate candidates
         gen_sys = prompts.CLARIFY_CANDIDATE_GEN_PROMPT.format(
-            tone=self.tone, k=self.n_candidates,
+            k=self.n_candidates,
         )
         gen_user = (
             f"Original question:\n{question}\n\n"
@@ -325,10 +324,10 @@ class CandidateClarification(ClarificationStrategy):
 # =============================================================
 
 class PlanningClarification(ClarificationStrategy):
-    def __init__(self, llm, max_turns, questions_per_turn, tone,
+    def __init__(self, llm, max_turns, questions_per_turn,
                  plan_max_lines: int = 12,
                  temperature: float = 0.0):
-        super().__init__(llm, max_turns, questions_per_turn, tone)
+        super().__init__(llm, max_turns, questions_per_turn)
         self.plan_max_lines = plan_max_lines
         self.temperature = temperature
 
@@ -337,7 +336,7 @@ class PlanningClarification(ClarificationStrategy):
         if not self.should_continue(history):
             return None
         sys = prompts.CLARIFY_PLANNING_PROMPT.format(
-            tone=self.tone, n=self.questions_per_turn,
+            n=self.questions_per_turn,
             max_lines=self.plan_max_lines,
         )
         user = (
@@ -383,7 +382,6 @@ def build_clarification_strategy(cfg, llm: LLMClient) -> ClarificationStrategy:
         llm=llm,
         max_turns=cfg.max_turns,
         questions_per_turn=cfg.questions_per_turn,
-        tone=cfg.tone,
     )
     if s == "spontaneous":
         return SpontaneousClarification(**base)

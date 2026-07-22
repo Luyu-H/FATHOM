@@ -37,5 +37,4 @@ scalar:
 breakdowns:
   overall: true
   by_level: true
-  by_ambiguity_type: true
   per_record: true
