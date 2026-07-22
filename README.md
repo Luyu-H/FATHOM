@@ -1,10 +1,10 @@
 <div align="center">
 
-# Can LLMs <i>Fathom</i> Ambiguous Intent in Scientific Data Analysis?
+# Can LLMs <i>FATHOM</i> Ambiguous Intent in Scientific Data Analysis?
 
 Luyu Han<sup>1</sup>, Bin Lu<sup>1</sup>, Shangzhi Yuan<sup>1</sup>, Lei Zhou<sup>1</sup>, Xinbing Wang<sup>1</sup>, Chengshan Wang<sup>2</sup>, Meng Jin<sup>1</sup>
 
-<sup>1</sup> Shanghai Jiao Tong University &nbsp;&nbsp;•&nbsp;&nbsp; <sup>2</sup> China University of Geosciences
+<sup>1</sup> Shanghai Jiao Tong University &nbsp;&nbsp;, &nbsp;&nbsp; <sup>2</sup> China University of Geosciences
 
 </div>
 
@@ -12,24 +12,9 @@ Luyu Han<sup>1</sup>, Bin Lu<sup>1</sup>, Shangzhi Yuan<sup>1</sup>, Lei Zhou<su
 
 ## 1. Overview
 
-Large language models (LLMs) increasingly support scientific data analysis through natural-language
-interaction. However, real-world queries often involve **ambiguous scientific intent**, making
-interactive clarification essential for reliable analysis. Existing scientific-analysis benchmarks
-focus on reasoning over well-defined problems but overlook clarification, leaving intent
-disambiguation largely unexamined.
+<i>FATHOM</i> is a benchmark for evaluating **ambiguity handling** in LLM-based **scientific data analysis**. Unlike existing scientific-analysis benchmarks that assume well-defined user requests, <i>FATHOM</i> studies whether models can identify ambiguous scientific intent and proactively ask clarification questions before performing downstream analysis. Developed in collaboration with Earth science experts, the benchmark features expert-verified ambiguous scientific queries, a three-level ambiguity hierarchy, and a structured taxonomy for fine-grained evaluation of intent disambiguation.
 
-To fill this gap, we present **<i>Fathom</i>**, a benchmark organized around a **three-level hierarchy**
-for the systematic evaluation of ambiguity handling. <i>Fathom</i> features **expert-verified ambiguities**
-grounded in real-world scientific scenarios, ensuring realistic and reliable assessment. With a
-structured ambiguity taxonomy and graded disambiguation difficulty, it enables fine-grained
-quantitative analysis of model behavior.
-
-Evaluation on frontier LLMs shows that ambiguous intent substantially degrades end-to-end scientific
-data analysis, **reducing accuracy by 49.3%**. While enforcing clarification **recovers 55.5%** of the
-lost performance, models spontaneously initiate clarification in **at most 0.857%** of ambiguous tasks —
-even though they reach **93.9% accuracy** when explicitly asked to identify ambiguity. These findings
-identify **proactive intent disambiguation** as the missing capability in current LLMs for scientific
-data analysis, and motivate ambiguity-aware evaluation as an essential component of future benchmarks.
+This repository provides the complete benchmark construction pipeline, including the data generation framework, benchmark datasets, and evaluation code, enabling reproducible research on ambiguity-aware scientific data analysis. The overall workflow of Fathom is illustrated below.
 
 <div align="center">
   <img src="assets/figure-1_pipeline.png" alt="Fathom pipeline" width="100%">
@@ -39,25 +24,25 @@ data analysis, and motivate ambiguity-aware evaluation as an essential component
 
 ```text
 .
-├── configs/                        # YAML configs for every stage
+├── configs/                        # YAML configs for different stages
 │   ├── data_gen.yaml               #   dataset generation
 │   ├── runner.yaml                 #   RQ1 — autonomous disambiguation run
-│   ├── runner_modular.yaml         #   RQ2 — agent-assisted / ambiguity-only run
+│   ├── runner_modular.yaml         #   RQ2 — agent-assisted disambiguation run / RQ3 - ambiguity recognition run
 │   ├── evaluate.yaml               #   metrics for runner.yaml outputs
 │   └── evaluate_modular.yaml       #   metrics for runner_modular.yaml outputs
 ├── data/
-│   ├── scientific_database/        # CMIP6 NetCDF (full/ download list, test/ subset)
-│   ├── ambiguous_term_corpus.jsonl # 108 expert-verified ambiguous terms
-│   ├── QA_dataset/                 # 2,000 QA pairs (full/) + test/ subset
-│   └── templates/                  # task & prompt templates used by generation
+│   ├── scientific_database/        # CMIP6 NetCDF (full/ full download list, test/ subset)
+│   ├── ambiguous_term_corpus.jsonl # expert-verified ambiguous terms
+│   ├── QA_dataset/                 # full/ 2,000 QA pairs + test/ subset
+│   └── templates/                  # task and prompt templates used by generation
 ├── src/
 │   ├── generate.py                 # data-generation entry point
-│   ├── run.py                      # RQ1 — autonomous experiment (Hydra)
-│   ├── run_modular.py              # RQ2 — agent-assisted / ambiguity-only experiment
+│   ├── run.py                      # RQ1 — autonomous disambiguation experiment
+│   ├── run_modular.py              # RQ2 — agent-assisted disambiguation experiment / RQ3 - ambiguity recognition experiment
 │   ├── evaluate.py                 # metrics for the autonomous setting
 │   ├── evaluate_modular.py         # metrics for the modular settings
 │   ├── data_gen/                   # dataset construction (see data_gen/README.md)
-│   ├── runner/                     # agent: LLM client, ambiguity detection, clarification, code exec
+│   ├── runner/                     # LLM client, ambiguity detection, clarification, code execution
 │   ├── eval/                       # simulated-user oracle + metric computation
 │   └── utils/                      # CMIP6 I/O, numerical diagnostics, domain knowledge
 ├── assets/
@@ -74,47 +59,36 @@ component is run and reproduced.
 
 ### 2.1 Scientific Database
 
-<i>Fathom</i> is built on a curated subset of the **CMIP6** climate archive. Every question is answered by
-executing code against these NetCDF files, so the database must be present before running the
-experiments.
+<i>FATHOM</i> is built on a curated subset of the CMIP6 climate archive. All benchmark questions are answered by executing code over the corresponding NetCDF files, so the scientific database is required before running the evaluation.
 
 - **Default location:** `data/scientific_database/`
-- **`full/`** — the complete set of CMIP6 files used by the benchmark. Because the raw data is large,
-  it is **not shipped in this repository**; the folder provides a manifest listing every required file
+- **`full/`**: the complete set (>800 GB) of CMIP6 files used by the benchmark. The folder provides a manifest listing all required file metadata and the information needed to retrieve each file from the official ESGF search portal (https://esgf-metagrid.cloud.dkrz.de/search).
   together with its download link. Follow that list to fetch the data locally.
-- **`test/`** — a small subset bundled for **quick reproduction**. It contains exactly the files needed
-  by the QA `test` set (Section 2.3), so the full pipeline can be exercised end-to-end without
-  downloading the entire archive.
+- **`test/`**: a lightweight subset (<4 GB) for quick reproduction. It contains file metadata required by the benchmark test split, allowing the complete evaluation pipeline to be run without downloading the full scientific database.
 
-The active data root is set by `cmip6.root` in `configs/data_gen.yaml` and `data.data_root` in the
-runner configs; both default to the `test` subset.
+For convenience, we also provide the curated CMIP6 subset on Hugging Face (https://huggingface.co/datasets/Luyu-H/CMIP6_scientific_database_for_FATHOM). We recommend starting with the **`test/`** subset for quick reproduction, and downloading the full dataset only when reproducing the complete benchmark.
+
+The active data root is set by `cmip6.root` in `configs/data_gen.yaml` and `data.data_root` in the runner configs. Both default to the `test` subset.
 
 ### 2.2 Ambiguous Term Corpus
 
 - **Location:** `data/ambiguous_term_corpus.jsonl`
 
-An expert-verified lexicon of **108 ambiguous terms** spanning **six ambiguity categories** —
-**Spatial (28)**, **Terminological (21)**, **Temporal (21)**, **Methodological (19)**,
-**Indicator (11)**, and **Vertical (8)**. Each entry records the term's surface forms, its category,
-the concrete parameters it maps to (`mapped_params`), and an expert `reasoning_note` describing the
-intended resolution. This corpus grounds both dataset generation and the simulated-user oracle used
-during evaluation.
+An expert-verified lexicon of 108 ambiguous terms spanning **six ambiguity categories**: Spatial, Terminological, Temporal, Methodological, Indicator, and Vertical. Each entry records the term's surface forms, its category, the concrete parameters it maps to (`mapped_params`), and a `reasoning_note` describing the intended resolution. This corpus grounds both dataset generation and the simulated-user oracle used during evaluation.
 
 ### 2.3 QA Dataset
 
-- **Location:** `data/QA_dataset/full/` (with a `test/` subset for fast reproduction)
+- **Location:** `data/QA_dataset/full/`, with a `test/` subset for fast reproduction
 
-<i>Fathom</i> contains **2,000 question–answer pairs** organized by a three-level difficulty hierarchy:
+<i>FATHOM</i> contains **2,000 question–answer pairs** organized by a three-level difficulty hierarchy:
 
 | Level | # Items | Ambiguity | Description |
 |:-----:|:-------:|:---------:|:------------|
 | **L1** |  600 | none (baseline) | Well-specified tasks that isolate raw analysis capability. |
-| **L2** |  700 | ~5.0 terms / query | Ambiguous queries requiring intent disambiguation. |
-| **L3** |  700 | ~6.0 terms / query | Ambiguous queries with higher compositional difficulty. |
+| **L2** |  700 | ambiguous | Ambiguous queries requiring intent disambiguation. |
+| **L3** |  700 | ambiguous / query | Ambiguous queries with higher reasoning complexity. |
 
-Each item provides the natural-language `question`, the executable-grounded `answer`, and the gold
-`ambiguous_terms` / `ambiguous_term_ids` linking back to the corpus in Section 2.2. The `test/` set
-mirrors this schema over the small scientific-data subset for quick end-to-end runs.
+Each item provides the natural-language `question`, the executable-grounded `answer`, and the gold `ambiguous_terms` and `ambiguous_term_ids` linking back to the corpus in Section 2.2. The `test/` set mirrors this schema over the small scientific-data subset for quick end-to-end runs.
 
 <div align="center">
   <img src="assets/figure-2_statistics.png" alt="Fathom dataset statistics" width="100%">
@@ -124,7 +98,7 @@ mirrors this schema over the small scientific-data subset for quick end-to-end r
 
 ## 3. Getting Started
 
-**Environment.** Python ≥ 3.10 is recommended (tested on 3.12).
+**Environment.** Python ≥ 3.10 is recommended.
 
 ```bash
 conda create -n fathom python=3.12 -y
@@ -132,14 +106,13 @@ conda activate fathom
 pip install -r requirements.txt
 ```
 
-**API keys.** LLM access is read from environment variables; each config's `api_key_env` field names
-the variable to use. Export the keys for the providers you intend to run, e.g.:
+**API keys.** LLM access is read from environment variables. Each config's `api_key_env` field names the variable to use. Export the keys for the providers you intend to run, e.g.:
 
 ```bash
-export OPENAI_API_KEY=...        # OpenAI (also DeepSeek / Qwen via OpenAI-compatible endpoints)
+export OPENAI_API_KEY=...        # OpenAI
 export ANTHROPIC_API_KEY=...     # Anthropic
 export DEEPSEEK_API_KEY=...      # DeepSeek
-export DASHSCOPE_API_KEY=...     # Qwen (DashScope)
+export DASHSCOPE_API_KEY=...     # Qwen
 export GEMINI_API_KEY=...        # Gemini
 ```
 
@@ -147,33 +120,27 @@ All commands below are run from the repository root.
 
 ### 3.1 Data Generation
 
-The released QA dataset and term corpus are ready to use, so data generation is only needed to
-**regenerate or extend** the benchmark. The pipeline (task synthesis → ambiguous-term tagging →
-question rephrasing) is driven by `configs/data_gen.yaml`:
+The released QA dataset and term corpus are ready to use, so data generation is only needed to **regenerate or extend** the benchmark. The pipeline is driven by `configs/data_gen.yaml`:
 
 ```bash
 python -m src.generate
 ```
 
-> Detailed configuration options and stage-by-stage instructions live in
+> Detailed configuration options and stage-by-stage instructions are available in
 > **[`src/data_gen/README.md`](src/data_gen/README.md)**.
 
 ### 3.2 Reproducing the Experiments
 
-By default the runner configs point at the **`test`** split, so the commands below run out of the box
-once the `test` scientific data is in place. Point `data.qa_data_dir` / `data.data_root` at the `full`
-splits to reproduce the full-scale numbers.
+By default, the runner configurations target the **`test`** split, so the commands below work out of the box once the `test` scientific data is in place. Do not modify the directory structure or file names in the scientific database, as the runner relies on the original layout.
 
-All runs write to `outputs/<run_name>/{full_records,summary}/`, and the evaluation scripts write metric
-reports to `outputs/<run_name>/metrics/`.
+All runs write to `outputs/<run_name>/{full_records,summary}/`, and the evaluation scripts write metric reports to `outputs/<run_name>/metrics/`.
 
 #### Setting 1 — Autonomous Disambiguation (RQ1)
 
-The full agent decides on its own whether to answer directly or ask a clarifying question
-(`clarification.strategy=spontaneous`). Configured by `configs/runner.yaml`:
+This setting allows LLMs to decide on its own whether to answer directly or ask a clarifying question (`clarification.strategy=spontaneous`). Configured by `configs/runner.yaml`:
 
 ```bash
-# Run a model (override provider / model / key-env on the CLI)
+# Run a model and override provider / model / key-env
 python -m src.run llm.provider=openai llm.model=gpt-5.4 llm.api_key_env=OPENAI_API_KEY
 
 # Compute metrics over the run(s)
@@ -182,18 +149,16 @@ python -m src.evaluate
 
 #### Setting 2 — Agent-Assisted Disambiguation (RQ2)
 
-Each ambiguous task is paired with a structured clarification loop against a simulated-user **oracle**
-before code generation. Configured by `configs/runner_modular.yaml` with `mode=clarification_only` and
-`clarification.strategy ∈ {direct, planning, candidate}`:
+Ambiguous tasks can also be evaluated with a structured clarification loop against a simulated-user oracle before code generation. Configured by `configs/runner_modular.yaml` with `mode=clarification_only` and `clarification.strategy ∈ {direct, planning, candidate}`:
 
 ```bash
 python -m src.run_modular mode=clarification_only clarification.strategy=planning
 python -m src.evaluate_modular eval.mode=clarification_only
 ```
 
-#### Ambiguity Identification (explicit ask)
+#### Setting 3 - Ambiguity Recognition (RQ3)
 
-To measure how well models recognize ambiguity when explicitly asked, run the detector-only mode:
+To measure how well models recognize ambiguity of the given query when explicitly asked, run the ambiguity-only mode:
 
 ```bash
 python -m src.run_modular mode=ambiguity_only
@@ -204,10 +169,7 @@ python -m src.evaluate_modular eval.mode=ambiguity_only
 
 ## 4. Main Results
 
-**Table 1 — End-to-end results** under the autonomous (RQ1) and agent-assisted (RQ2) disambiguation
-settings. Accuracy and Exec. Rate are higher-is-better (↑); Incorrect-among-Executed is
-lower-is-better (↓). *Clarify:* ✗ = effectively never clarifies spontaneously, ◐ = occasionally
-clarifies, ✓ = clarification enforced.
+**Table 1 — End-to-end results** under the autonomous (RQ1) and agent-assisted (RQ2) disambiguation settings. Accuracy and Exec. Rate are higher-is-better (↑), and Incorrect among Exec. is lower-is-better (↓). *Clarify:* ✗ = never clarifies spontaneously, ◐ = occasionally clarifies, ✓ = clarification enforced.
 
 | Setting | Model / Strategy | Clarify | Acc L1 | Acc L2 | Acc L3 | **Acc All** ↑ | Exec L1 | Exec L2 | Exec L3 | **Exec All** ↑ | Inc L1 | Inc L2 | Inc L3 | **Inc All** ↓ |
 |:-------:|:-----------------|:-------:|:------:|:------:|:------:|:-------:|:-------:|:-------:|:-------:|:--------:|:------:|:------:|:------:|:--------:|
@@ -221,9 +183,7 @@ clarifies, ✓ = clarification enforced.
 | | Candidate | ✓ | -- | 0.674 | 0.580 | **0.627** | -- | 0.993 | 0.940 | **0.966** | -- | 0.319 | 0.360 | **0.339** |
 | | _Avg._ | ✓ | -- | 0.694 | 0.568 | **0.631** | -- | 0.995 | 0.940 | **0.967** | -- | 0.301 | 0.371 | **0.336** |
 
-**Table 2 — Accuracy decomposed by ambiguity category and by disambiguation difficulty**
-(number of ambiguous terms per query). Categories: **VERT** = Vertical, **SPAT** = Spatial,
-**TERM** = Terminological, **TEMP** = Temporal, **METH** = Methodological, **INDI** = Indicator.
+**Table 2 — Accuracy decomposed by ambiguity category and by disambiguation difficulty** (number of ambiguous terms per query). Categories: VERT = Vertical, SPAT = Spatial, TERM = Terminological, TEMP = Temporal, METH = Methodological, INDI = Indicator.
 
 | Setting | Model / Strategy | VERT | SPAT | TERM | TEMP | METH | INDI | 1–3 | 4 | 5 | 6 | 7 | 8–12 |
 |:-------:|:-----------------|:----:|:----:|:----:|:----:|:----:|:----:|:---:|:---:|:---:|:---:|:---:|:----:|

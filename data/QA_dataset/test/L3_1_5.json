@@ -1,0 +1,59 @@
+[
+  {
+    "id": "L3_1_5",
+    "level": 3,
+    "task_id": "L3_1",
+    "prompt_id": "P1",
+    "prompt": "\nYou are an expert in climate-data analysis working with CMIP6 ocean model output. CMIP6 (Coupled Model Intercomparison Project Phase 6) is a coordinated international effort that provides standardized climate simulations of past, present, and future climate conditions.\n\n============================================================\nSIMULATION CONFIGURATION\n============================================================\nThe question targets the following simulation(s). Use only these experiment / source-model combinations; do not substitute alternatives.\n- Experiment: historical (CMIP6 historical simulation (1850–2014))\n- Climate model (source): GFDL-ESM4\n- Time period required by the question: 1994-01 to 2013-12\n\n============================================================\nAVAILABLE VARIABLES\n============================================================\nThe following ocean variables are available. All variables are monthly resolution. Variable names in NetCDF files exactly match the variable_id below. Units are uniform across all experiments and source models.\n\n  variable_id   long_name                                            unit\n  -----------   --------------------------------------------------   -----------\n  thetao        Sea Water Potential Temperature                      degC\n  so            Sea Water Salinity                                   0.001\n  ph            Sea Water pH                                         1\n  dissic        Dissolved Inorganic Carbon Concentration     mol m-3\n  dissoc        Dissolved Organic Carbon Concentration               mol m-3\n  talk          Total Alkalinity                                     mol m-3\n  intdic        Dissolved Inorganic Carbon Content                   kg m-2\n  intdoc        Dissolved Organic Carbon Content                     kg m-2\n  intpoc        Particulate Organic Carbon Content                   kg m-2\n  no3           Dissolved Nitrate Concentration                      mol m-3\n  po4           Total Dissolved Inorganic Phosphorus Concentration   mol m-3\n  si            Total Dissolved Inorganic Silicon Concentration      mol m-3\n  dfe           Dissolved Iron Concentration                         mol m-3\n  o2            Dissolved Oxygen Concentration                       mol m-3\n  o2sat         Dissolved Oxygen Concentration at Saturation         mol m-3\n  chl           Mass Concentration of Total Phytoplankton \n                Expressed as Chlorophyll in Sea Water                kg m-3\n  phycos        Sea Surface Phytoplankton Carbon Concentration       mol m-3\n  uo            Sea Water X Velocity                                 m s-1\n  vo            Sea Water Y Velocity                                 m s-1\n  wo            Sea Water Vertical Velocity                          m s-1\n  umo           Ocean Mass X Transport                               kg s-1\n  vmo           Ocean Mass Y Transport                               kg s-1\n  wmo           Upward Ocean Mass Transport                          kg s-1\n  areacello     Grid-Cell Area for Ocean Variables                   m2\n\n============================================================\nDATA STORAGE & FILE LAYOUT\n============================================================\nAll NetCDF files are organized under a common root directory using the following hierarchy:\n\n  <data_root>/<experiment_id>/<source_id>/<variable_id>/<file>.nc\n\nThe concrete value of `<data_root>` is not specified here. It will be provided separately at code-generation time.\n\nFor each (experiment_id, source_id, variable_id) leaf, one or more NetCDF files may be present. For time-varying variables, each filename encodes its temporal coverage as <YYYYMM>-<YYYYMM> (inclusive start month to end month). When the question targets a specific time period, identify and open only the file(s) whose encoded range overlaps that period — do not load unnecessary chunks. The time-axis length may differ across files of the same variable.\n\n============================================================\nSOURCE-MODEL DETAILS\n============================================================\nSource-model-specific details (file-name templates, grid configuration, dimensions, coordinate variables, and special cases) for the simulation(s) listed above:\n\n[GFDL-ESM4]\n  Grid:           gr (regular 1x1 degree, 180 lat x 360 lon)\n  Variant label:  r1i1p1f1\n  File templates:\n    Time-varying (Omon) files for most variables:  <variable_id>_Omon_GFDL-ESM4_<experiment_id>_r1i1p1f1_gr_<YYYYMM>-<YYYYMM>.nc\n    Fixed (Ofx) files for areacello:          <variable_id>_Ofx_GFDL-ESM4_<experiment_id>_r1i1p1f1_gr.nc\n  Dimensions of standard 3D variable: (time, lev, lat, lon), with lev=35\n  Coordinate variables:\n    time      (time,)        float64  -- days since 1850-01-01 00:00:00\n    time_bnds (time, bnds)   float64\n    lev       (lev,)         float64  -- depth axis, units: m\n    lev_bnds  (lev, bnds)    float64  -- units: m\n    lat       (lat,)         float64  -- 1-D latitude, degrees_north\n    lon       (lon,)         float64  -- 1-D longitude, degrees_east\n    lat_bnds  (lat, bnds)    float64\n    lon_bnds  (lon, bnds)    float64\n  Special cases:\n    - intdic, intdoc, intpoc, phycos: no lev dim -> shape (time, lat, lon)\n    - areacello: only (lat, lon)\n\n============================================================\nQUESTION CONVENTIONS\n============================================================\nApply the following conventions when interpreting the question:\n\n- Time period: any time range stated in the question — whether at month granularity (YYYY-MM ~ YYYY-MM) or year granularity (YYYY ~ YYYY), and regardless of the separator used (~, to, –, etc.) — is inclusive on both ends. Include the full start and end periods in the computation.\n\n- Depth handling: judge membership by each vertical layer's center depth.\n  - Depth range: a layer participates in full when its center depth lies within the range; layers are not partially weighted.\n  - Single depth (e.g., at depth X m): use the layer whose center depth is closest to X.\n  - No depth specified: compute over all vertical layers.\n\n============================================================\nTASK\n============================================================\nSolve the question below using the dataset(s) described above. Identify the appropriate variable(s) from the variable list, apply the necessary scientific processing, and produce the final answer. The final answer must be either a single numerical value or a yes/no decision.\n\nQuestion:\n",
+    "question": "What is the decadal linear trend in the photic zone dissolved oxygen inventory within the oligotrophic area defined in the same depth layer inside the 61°S–35°N, 11°E–114°E over 1994 ~ 2013?",
+    "answer": "-406172382777.11 per decade",
+    "ambiguous_terms": [
+      "decadal linear trend",
+      "photic zone",
+      "dissolved oxygen inventory",
+      "oligotrophic",
+      "mean",
+      "volume"
+    ],
+    "data_metadata": {
+      "experiment_id": "historical",
+      "source_id": [
+        "GFDL-ESM4"
+      ],
+      "variable_id": [
+        "o2"
+      ],
+      "start_time": "1994-01",
+      "end_time": "2013-12"
+    },
+    "task_metadata": {
+      "implicit_depth": "photic zone",
+      "implicit_derived_variable": "dissolved oxygen inventory",
+      "region_code": {
+        "lat1": -61,
+        "lat2": 35,
+        "lon1": 11,
+        "lon2": 114
+      },
+      "region": "61°S–35°N, 11°E–114°E",
+      "qualified_area": "oligotrophic area",
+      "start_year": "1994-01",
+      "end_year": "2013-12",
+      "time_period_yr": "1994 ~ 2013"
+    },
+    "answer_metadata": {
+      "type": "scalar",
+      "value": -406172382777.11,
+      "unit": "per decade",
+      "qualified_area_variable_used": "chl"
+    },
+    "ambiguous_term_ids": [
+      "METH_13",
+      "VERT_7",
+      "METH_16",
+      "TERM_6",
+      "METH_6",
+      "METH_10"
+    ]
+  }
+]
