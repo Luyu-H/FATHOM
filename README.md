@@ -1,6 +1,6 @@
 <div align="center">
 
-# Can LLMs <i>FATHOM</i> Ambiguous Intent in Scientific Data Analysis?
+# Can LLMs <i>FATHOM</i> Ambiguous Intent <br>in Scientific Data Analysis?
 
 Luyu Han<sup>1</sup>, Bin Lu<sup>2</sup>, Shangzhi Yuan<sup>2</sup>, Lei Zhou<sup>3</sup>, Xinbing Wang<sup>2</sup>, Chengshan Wang<sup>4</sup>, Meng Jin<sup>1</sup>
 
